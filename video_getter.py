@@ -2,14 +2,18 @@ import os
 import skvideo.io
 import yaml
 import json
+
+
 meta_path = './bbdb.v0.9.min.json'
 labels_path = './labels.yaml'
 segments_path = './segments'
+
 
 def labels():
     with  open(labels_path) as fp:
         ls = yaml.load(fp, Loader=yaml.FullLoader)
     return ls
+
 
 class Video:
     def __init__(self, gamecode, segment_index, fps, label_index):
@@ -25,6 +29,7 @@ class Video:
         filepath = os.path.join(segments_path, self.gamecode, filename)
         videodata = skvideo.io.vread(filepath)
         return videodata[::skip_rate]
+
 
 def get_videos(gamecodes=None, label_indexes=None):
     with open(meta_path) as fp:
@@ -43,14 +48,8 @@ def get_videos(gamecodes=None, label_indexes=None):
             videos.append(Video(gamecode, i, fps, label_index))
     return videos
 
+
 def extract_data(videos, skip_rate):
     vlist = [video.data(skip_rate) for video in videos]
     vanno = [video.label_index for video in videos]
     return vlist, vanno
-            
-
-    
-
-
-        
-        

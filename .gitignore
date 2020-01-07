@@ -1,3 +1,9 @@
+# Custom
+# Baseball Database (BBDB) directory
+BBDB/
+# Segments in BBDB
+segments/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

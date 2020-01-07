@@ -2,8 +2,11 @@ import os
 import json
 from moviepy.editor import VideoFileClip
 
+
 bbdb_path = './BBDB/fullgame'
 segments_path = './segments'
+
+
 def extract(filename, meta):
     gamecode, _ = os.path.splitext(filename)
     clips_path = os.path.join(segments_path, gamecode)
@@ -30,4 +33,4 @@ def main():
                 extract(file, meta)
 
 if __name__ == "__main__":
-  main()
+    main()
