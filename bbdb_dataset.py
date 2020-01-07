@@ -1,11 +1,12 @@
 """
 Define the PyTorch Dataset class for Baseball Database (BBDB).
 """
-import skvideo.io
 import glob
 import json
 import re
 
+import numpy as np
+import skvideo.io
 from torch.utils.data import Dataset
 
 
@@ -14,8 +15,9 @@ class BBDBDataset(Dataset):
     PyTorch Dataset class for Baseball Database (BBDB).
     """
 
-    def __init__(self, segment_filepaths, frameskip, meta_path="./bbdb.v0.9.min.json"):
+    def __init__(self, segment_filepaths, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         self.frameskip = frameskip
+        self.transform = transform
 
         self.segment_filepaths = segment_filepaths
         with open(meta_path) as fp:
@@ -25,7 +27,7 @@ class BBDBDataset(Dataset):
         """
         Return a segment with a given index.
 
-        The segment has shape (length, height, width, channel).
+        The segment has shape (channel, length, height, width).
         """
         segment_filepath = self.segment_filepaths[index]
         z = re.match("\./segments/(\w+)/(\w+).mp4", segment_filepath)
@@ -41,11 +43,20 @@ class BBDBDataset(Dataset):
 
         data = skvideo.io.vread(segment_filepath)
 
+        # Change order of dimensions from (length, height, width, channel) to (channel, length, height, width)
+        data = data.transpose([3, 0, 1, 2])
+
         # NOTE(seungjaeryanlee): Some videos have 60fps, some have 30fps
         if fps > 30:
-            return data[:: self.frameskip * 2], label_index
+            data = data[::self.frameskip * 2]
         else:
-            return data[:: self.frameskip], label_index
+            data = data[::self.frameskip]
+
+        if self.transform is not None:
+            data = self.transform(data)
+
+        return data, label_index
+
 
     def __len__(self):
         return len(self.segment_filepaths)

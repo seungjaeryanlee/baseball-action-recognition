@@ -1,5 +1,5 @@
 import os
-import sys
+import json
 import argparse
 
 import torch
@@ -8,36 +8,20 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
+from torch.utils.data import DataLoader
 
 import torchvision
 from torchvision import datasets, transforms
-import videotransforms
+import video_transforms
 
 import numpy as np
 
-from pytorch_i3d import InceptionI3d
-from charades_dataset import Charades as Dataset
+from i3d import InceptionI3d
 import bbdb_dataset
 
 
-def run(optimizer, init_lr=0.1, max_steps=64e3, mode='rgb', batch_size=8*5, save_model=''):
-    # Choose RGB-I3D or Flow-I3D
-    if mode == 'flow':
-        i3d = InceptionI3d(400, in_channels=2)
-        i3d.load_state_dict(torch.load('models/flow_imagenet.pt'))
-    else:
-        i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
-
-    i3d.replace_logits(bbdb_dataset.NUM_LABELS)
-    #i3d.load_state_dict(torch.load('/ssd/models/000920.pt'))
-    i3d.cuda()
-    i3d = nn.DataParallel(i3d)
-
-    # Setup learning rate
-    lr = init_lr
-    lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
-
+def train_i3d(i3d, optimizer, init_lr, lr_scheduler, dataloader, val_dataloader, max_steps=64e3, save_model=''):
+    dataloaders = { 'train': dataloader, 'val': val_dataloader }
     # Training loop
     num_steps_per_update = 4 # Accumulate gradient
     steps = 0
@@ -69,6 +53,8 @@ def run(optimizer, init_lr=0.1, max_steps=64e3, mode='rgb', batch_size=8*5, save
                 t = inputs.size(2)
                 labels = Variable(labels.cuda())
 
+                print(inputs.shape)
+                print(labels)
                 per_frame_logits = i3d(inputs)
                 # upsample to input size
                 per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
@@ -108,27 +94,54 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-mode', type=str, help='rgb or flow')
     parser.add_argument('-save_model', type=str)
-    parser.add_argument('-root', type=str)
 
     args = parser.parse_args()
 
-    train_split = 'charades/charades.json'
-    root = args.root or '/ssd/Charades_v1_rgb'
+    # Setup I3D
+    # Choose RGB-I3D or Flow-I3D
+    if args.mode == 'flow':
+        i3d = InceptionI3d(400, in_channels=2)
+        i3d.load_state_dict(torch.load('models/flow_imagenet.pt'))
+    else:
+        i3d = InceptionI3d(400, in_channels=3)
+        i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
+    i3d.replace_logits(bbdb_dataset.NUM_LABELS)
+    #i3d.load_state_dict(torch.load('/ssd/models/000920.pt'))
+    i3d.cuda()
+    i3d = nn.DataParallel(i3d)
 
-    # setup dataset
-    train_transforms = transforms.Compose([videotransforms.RandomCrop(224),
-                                           videotransforms.RandomHorizontalFlip(),
+    # Setup optimizer and lr_scheduler
+    init_lr = 0.1
+    optimizer = optim.SGD(i3d.parameters(), lr=init_lr, momentum=0.9, weight_decay=0.0000001)
+    lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [300, 1000])
+
+    # Setup Datasets and Dataloaders
+    # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
+    batch_size = 4
+    # TODO(seungjaeryanlee): Setup transforms (Rescale, RandomCrop, ToTensor)
+    # https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
+    with open("data_split.min.json", "r") as fp:
+        data_split = json.load(fp)
+    train_transforms = transforms.Compose([
+        video_transforms.RandomCrop(224),
+        video_transforms.RandomHorizontalFlip(),
     ])
-    test_transforms = transforms.Compose([videotransforms.CenterCrop(224)])
+    val_transforms = transforms.Compose([
+        video_transforms.CenterCrop(224),
+    ])
+    # TODO(seungjaeryanlee): Check num_workers for DataLoader
+    dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["train"], frameskip=1, transform=train_transforms)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
 
-    dataset = Dataset(train_split, 'training', root, mode, train_transforms)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=36, pin_memory=True)
+    val_dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["valid"], frameskip=1, transform=val_transforms)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
 
-    val_dataset = Dataset(train_split, 'testing', root, mode, test_transforms)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=36, pin_memory=True)
-
-    dataloaders = {'train': dataloader, 'val': val_dataloader}
-    datasets = {'train': dataset, 'val': val_dataset}
-
-    optimizer = optim.SGD(i3d.parameters(), lr=lr, momentum=0.9, weight_decay=0.0000001)
-    run(optimizer, mode=args.mode, save_model=args.save_model)
+    train_i3d(
+        i3d,
+        optimizer,
+        init_lr,
+        lr_scheduler,
+        dataloader,
+        val_dataloader,
+        save_model=args.save_model
+    )

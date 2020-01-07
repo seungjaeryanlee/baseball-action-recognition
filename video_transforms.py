@@ -1,3 +1,8 @@
+"""
+Transforms for videos.
+
+PyTorch transforms only work for PIL images.
+"""
 import numpy as np
 import numbers
 import random
