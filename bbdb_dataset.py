@@ -51,6 +51,7 @@ class BBDBDataset(Dataset):
         return len(self.segment_filepaths)
 
 
+NUM_LABELS = 30
 LABEL_ID_TO_STR = {
     0: "Ball",
     1: "Strike",
