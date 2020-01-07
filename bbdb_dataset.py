@@ -14,10 +14,10 @@ class BBDBDataset(Dataset):
     PyTorch Dataset class for Baseball Database (BBDB).
     """
 
-    def __init__(self, frameskip, meta_path="./bbdb.v0.9.min.json"):
+    def __init__(self, segment_filepaths, frameskip, meta_path="./bbdb.v0.9.min.json"):
         self.frameskip = frameskip
 
-        self.segment_filepaths = glob.glob("./segments/**/*.mp4")
+        self.segment_filepaths = segment_filepaths
         with open(meta_path) as fp:
             self.meta = json.load(fp)
 
@@ -119,5 +119,8 @@ LABEL_STR_TO_ID = {
 
 
 if __name__ == "__main__":
-    dataset = BBDBDataset(frameskip=1)
+    with open("data_split.min.json", "r") as fp:
+        data_split = json.load(fp)
+    dataset = BBDBDataset(segment_filepaths=data_split["train"], frameskip=1)
     print(dataset[0][0].shape)
+    print(len(dataset))
