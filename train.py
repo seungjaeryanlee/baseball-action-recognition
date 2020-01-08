@@ -20,6 +20,11 @@ from i3d import InceptionI3d
 import bbdb_dataset
 
 
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
+
+
 def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloader, save_model):
     dataloaders = { 'train': dataloader, 'val': val_dataloader }
     # Training loop
@@ -35,7 +40,7 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
                 i3d.train(True)
             else:
                 i3d.train(False)
-                
+
             tot_loss = 0.0
             tot_loc_loss = 0.0
             tot_cls_loss = 0.0
@@ -72,6 +77,7 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
                     optimizer.step()
                     optimizer.zero_grad()
                     lr_scheduler.step()
+                    wandb.log({ "lr": get_lr(optimizer) }, step=steps)
                     if steps % 10 == 0:
                         # Save model
                         model_filename = save_model + str(steps).zfill(6) + '.pt'
