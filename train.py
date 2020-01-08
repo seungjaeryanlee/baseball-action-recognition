@@ -7,7 +7,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 import torchvision
@@ -45,30 +44,26 @@ def train_i3d(i3d, optimizer, init_lr, lr_scheduler, dataloader, val_dataloader,
             # Iterate over data.
             for data in dataloaders[phase]:
                 num_iter += 1
-                # get the inputs
+
                 inputs, labels = data
-
-                # wrap them in Variable
-                inputs = Variable(inputs.cuda())
+                inputs = inputs.float().cuda()
                 t = inputs.size(2)
-                labels = Variable(labels.cuda())
+                labels = labels.cuda()
 
-                print(inputs.shape)
-                print(labels)
                 per_frame_logits = i3d(inputs)
                 # upsample to input size
                 per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
 
                 # compute localization loss
                 loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
-                tot_loc_loss += loc_loss.data[0]
+                tot_loc_loss += loc_loss.item()
 
                 # compute classification loss (with max-pooling along time B x C x T)
                 cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
-                tot_cls_loss += cls_loss.data[0]
+                tot_cls_loss += cls_loss.item()
 
                 loss = (0.5*loc_loss + 0.5*cls_loss)/num_steps_per_update
-                tot_loss += loss.data[0]
+                tot_loss += loss.item()
                 loss.backward()
 
                 if num_iter == num_steps_per_update and phase == 'train':
@@ -84,7 +79,6 @@ def train_i3d(i3d, optimizer, init_lr, lr_scheduler, dataloader, val_dataloader,
                         tot_loss = tot_loc_loss = tot_cls_loss = 0.
             if phase == 'val':
                 print('{} Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(phase, tot_loc_loss/num_iter, tot_cls_loss/num_iter, (tot_loss*num_steps_per_update)/num_iter))
-    
 
 
 if __name__ == '__main__':
@@ -143,5 +137,5 @@ if __name__ == '__main__':
         lr_scheduler,
         dataloader,
         val_dataloader,
-        save_model=args.save_model
+        save_model=args.save_model if args.save_model else ""
     )

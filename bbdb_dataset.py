@@ -10,58 +10,6 @@ import skvideo.io
 from torch.utils.data import Dataset
 
 
-class BBDBDataset(Dataset):
-    """
-    PyTorch Dataset class for Baseball Database (BBDB).
-    """
-
-    def __init__(self, segment_filepaths, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
-        self.frameskip = frameskip
-        self.transform = transform
-
-        self.segment_filepaths = segment_filepaths
-        with open(meta_path) as fp:
-            self.meta = json.load(fp)
-
-    def __getitem__(self, index):
-        """
-        Return a segment with a given index.
-
-        The segment has shape (channel, length, height, width).
-        """
-        segment_filepath = self.segment_filepaths[index]
-        z = re.match("\./segments/(\w+)/(\w+).mp4", segment_filepath)
-        # NOTE(seungjaeryanlee): segment_index is per video, not global
-        gamecode, segment_index = z.groups()
-        segment_index = int(segment_index)
-
-        # Get metadata
-        fps = self.meta["database"][gamecode]["fps"]
-        label_index = self.meta["database"][gamecode]["annotations"][segment_index][
-            "labelIndex"
-        ]
-
-        data = skvideo.io.vread(segment_filepath)
-
-        # Change order of dimensions from (length, height, width, channel) to (channel, length, height, width)
-        data = data.transpose([3, 0, 1, 2])
-
-        # NOTE(seungjaeryanlee): Some videos have 60fps, some have 30fps
-        if fps > 30:
-            data = data[::self.frameskip * 2]
-        else:
-            data = data[::self.frameskip]
-
-        if self.transform is not None:
-            data = self.transform(data)
-
-        return data, label_index
-
-
-    def __len__(self):
-        return len(self.segment_filepaths)
-
-
 NUM_LABELS = 30
 LABEL_ID_TO_STR = {
     0: "Ball",
@@ -127,6 +75,65 @@ LABEL_STR_TO_ID = {
     "Passed ball": 28,
     "Pickoff out": 29,
 }
+
+
+class BBDBDataset(Dataset):
+    """
+    PyTorch Dataset class for Baseball Database (BBDB).
+    """
+
+    def __init__(self, segment_filepaths, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+        self.frameskip = frameskip
+        self.transform = transform
+
+        # TODO(seungjaeryanlee): Seems like we need same number of frames per segment?
+        self.segment_length = 150
+
+        self.segment_filepaths = segment_filepaths
+        with open(meta_path) as fp:
+            self.meta = json.load(fp)
+
+    def __getitem__(self, index):
+        """
+        Return a segment with a given index.
+
+        The segment has shape (channel, length, height, width).
+        """
+        segment_filepath = self.segment_filepaths[index]
+        z = re.match("\./segments/(\w+)/(\w+).mp4", segment_filepath)
+        # NOTE(seungjaeryanlee): segment_index is per video, not global
+        gamecode, segment_index = z.groups()
+        segment_index = int(segment_index)
+
+        # Get metadata
+        fps = self.meta["database"][gamecode]["fps"]
+        label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
+
+        data = skvideo.io.vread(segment_filepath)
+
+        # NOTE(seungjaeryanlee): Some videos have 60fps, some have 30fps
+        if fps > 30:
+            data = data[::self.frameskip * 2]
+        else:
+            data = data[::self.frameskip]
+
+        if self.transform is not None:
+            data = self.transform(data)
+
+        data = data[0:self.segment_length]
+
+        # Change order of dimensions from (length, height, width, channel) to (channel, length, height, width)
+        # NOTE(seungjaeryanlee): This must come after transforms
+        data = data.transpose([3, 0, 1, 2])
+
+        # Change label to onehot label per image
+        onehot_label = np.zeros((NUM_LABELS, self.segment_length), dtype=np.float32)
+        onehot_label[label_index, :] = 1
+
+        return data, onehot_label
+
+    def __len__(self):
+        return len(self.segment_filepaths)
 
 
 if __name__ == "__main__":
