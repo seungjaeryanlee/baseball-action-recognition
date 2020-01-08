@@ -108,10 +108,10 @@ if __name__ == '__main__':
         "I3D_SAVE_MODEL_PATH": "models/",
 
         ## Data
-        "FRAMESKIP": 1,
+        "FRAMESKIP": 1, # TODO(seungjaeryanlee): 1, 4, ?
 
         ## Training
-        "MAX_STEPS": 6400,
+        "MAX_STEPS": 64000, # TODO(seungjaeryanlee): 2 or 3 epochs
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
         "BATCH_SIZE": 4,
 
@@ -147,10 +147,11 @@ if __name__ == '__main__':
         momentum=CONFIG["MOMENTUM"],
         weight_decay=CONFIG["WEIGHT_DECAY"],
     )
+    # TODO(seungjaeryanlee): Change to ReduceLROnPlateau
     lr_scheduler = MultiStepLR(optimizer, CONFIG["MULTISTEP_LR_MILESTONES"])
 
     # Setup Datasets and Dataloaders
-    # TODO(seungjaeryanlee): Setup transforms (Rescale, RandomCrop, ToTensor)
+    # TODO(seungjaeryanlee): Setup transforms (Rescale)
     # https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
