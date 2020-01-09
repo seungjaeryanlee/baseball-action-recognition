@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.optim.lr_scheduler import MultiStepLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
 import torchvision
@@ -117,7 +117,6 @@ if __name__ == '__main__':
 
         ## Learning Rate
         "INIT_LR": 0.1,
-        "MULTISTEP_LR_MILESTONES": [300, 1000],
         "MOMENTUM": 0.9,
         "WEIGHT_DECAY": 0.0000001,
 
@@ -147,8 +146,7 @@ if __name__ == '__main__':
         momentum=CONFIG["MOMENTUM"],
         weight_decay=CONFIG["WEIGHT_DECAY"],
     )
-    # TODO(seungjaeryanlee): Change to ReduceLROnPlateau
-    lr_scheduler = MultiStepLR(optimizer, CONFIG["MULTISTEP_LR_MILESTONES"])
+    lr_scheduler = ReduceLROnPlateau(optimizer)
 
     # Setup Datasets and Dataloaders
     # TODO(seungjaeryanlee): Setup transforms (Rescale)
