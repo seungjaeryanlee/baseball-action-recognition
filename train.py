@@ -25,18 +25,15 @@ def get_lr(optimizer):
         return param_group['lr']
 
 
-def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloader, save_model, num_steps_per_update):
+def train_i3d(i3d, max_epoch, optimizer, lr_scheduler, dataloader, val_dataloader, save_model, num_steps_per_update):
     train_batch_iterator = iter(dataloader)
     val_batch_iterator = iter(val_dataloader)
 
     # Training loop
     # Counted by number of minibatches, NOT number of updates
     steps = 0
-    # TODO(seungjaeryanlee): Change to epoch
-    while steps < max_steps: # for epoch in range(num_epochs):
-        print('Step {}/{}'.format(steps, max_steps))
-        print('----------')
-
+    current_epoch = 0
+    while current_epoch < max_epoch:
         # Training phase
         i3d.train(True)
 
@@ -51,6 +48,7 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
         except StopIteration:
             train_batch_iterator = iter(dataloader)
             inputs, labels = next(train_batch_iterator)
+            current_epoch += 1
         inputs = inputs.float().cuda()
         labels = labels.cuda()
         t = inputs.size(2)
@@ -77,7 +75,8 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
         optimizer.step()
         optimizer.zero_grad()
         wandb.log({ "lr": get_lr(optimizer) }, step=steps)
-        print('Train | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+        print('Step {:5d} | Train | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+            steps,
             tot_loc_loss / num_steps_per_update,
             tot_cls_loss / num_steps_per_update,
             tot_loss,
@@ -114,7 +113,8 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
 
             val_loss = 0.5 * val_loc_loss + 0.5 * val_cls_loss
 
-            print('Valid | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+            print('Step {:5d} | Valid | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+                steps,
                 val_loc_loss.item(),
                 val_cls_loss.item(),
                 val_loss.item(),
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         "FRAMESKIP": 1, # TODO(seungjaeryanlee): 1, 4, ?
 
         ## Training
-        "MAX_STEPS": 64000, # TODO(seungjaeryanlee): 2 or 3 epochs
+        "MAX_EPOCH": 3,
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
         "BATCH_SIZE": 4,
 
@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
     train_i3d(
         i3d=i3d,
-        max_steps=CONFIG["MAX_STEPS"],
+        max_epoch=CONFIG["MAX_EPOCH"],
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
         dataloader=dataloader,
