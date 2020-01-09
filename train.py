@@ -30,6 +30,7 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
     val_batch_iterator = iter(val_dataloader)
 
     # Training loop
+    # Counted by number of minibatches, NOT number of updates
     steps = 0
     # TODO(seungjaeryanlee): Change to epoch
     while steps < max_steps: # for epoch in range(num_epochs):
@@ -55,6 +56,8 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
         t = inputs.size(2)
 
         for _ in range(num_steps_per_update):
+            steps += 1
+
             per_frame_logits = i3d(inputs)
             # upsample to input size
             per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
@@ -71,27 +74,20 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
             tot_loss += loss.item()
             loss.backward()
 
-        # TODO(seungjaeryanlee): Check step increment
-        steps += 1
         optimizer.step()
         optimizer.zero_grad()
         wandb.log({ "lr": get_lr(optimizer) }, step=steps)
-        if steps % 10 == 0:
-            # Save model
-            model_filename = save_model + str(steps).zfill(6) + '.pt'
-            torch.save(i3d.module.state_dict(), model_filename)
-            wandb.save(model_filename)
-            print('Train | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
-                tot_loc_loss/(10*num_steps_per_update),
-                tot_cls_loss/(10*num_steps_per_update),
-                tot_loss/10,
-            ))
-            wandb.log({
-                "train_loc_loss": tot_loc_loss / (10 * num_steps_per_update),
-                "train_cls_loss": tot_cls_loss / (10 * num_steps_per_update),
-                "train_tot_loss": tot_loss / 10,
-            }, step=steps)
-            tot_loss = tot_loc_loss = tot_cls_loss = 0.
+        print('Train | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+            tot_loc_loss / num_steps_per_update,
+            tot_cls_loss / num_steps_per_update,
+            tot_loss,
+        ))
+        wandb.log({
+            "train_loc_loss": tot_loc_loss / num_steps_per_update,
+            "train_cls_loss": tot_cls_loss / num_steps_per_update,
+            "train_tot_loss": tot_loss,
+        }, step=steps)
+        tot_loss = tot_loc_loss = tot_cls_loss = 0.
 
         # Validation phase
         i3d.train(False)
@@ -129,6 +125,14 @@ def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloade
                 "val_tot_loss": val_loss.item(),
             }, step=steps)
 
+        # Save model
+        if steps % 10 == 0:
+            # TODO(seungjaeryanlee): Move to CONFIG
+            model_filename = save_model + str(steps).zfill(6) + '.pt'
+            torch.save(i3d.module.state_dict(), model_filename)
+            wandb.save(model_filename)
+
+        # Update learning rate
         lr_scheduler.step(val_loss)
 
 
