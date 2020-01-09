@@ -1,6 +1,8 @@
 import os
 import json
 import argparse
+from datetime import datetime
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -159,9 +161,14 @@ if __name__ == '__main__':
 
         ## Misc.
         # Accumulate gradient
-        "NUM_STEPS_`PER_UPDATE": 4,
+        "NUM_STEPS_PER_UPDATE": 4,
         "MODEL_SAVE_INTERVAL": 10,
     }
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    CONFIG["I3D_SAVE_MODEL_PATH"] = CONFIG["I3D_SAVE_MODEL_PATH"] + timestamp + "/"
+    Path(CONFIG["I3D_SAVE_MODEL_PATH"]).mkdir(parents=True, exist_ok=True)
+    with open(CONFIG["I3D_SAVE_MODEL_PATH"] + "config.json", "w+") as fp:
+        json.dump(CONFIG, fp, indent=4)
 
     # Setup wandb
     wandb.init(project="baseball-action-recognition", config=CONFIG)
