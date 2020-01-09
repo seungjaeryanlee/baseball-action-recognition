@@ -25,13 +25,11 @@ def get_lr(optimizer):
         return param_group['lr']
 
 
-def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloader, save_model):
+def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloader, save_model, num_steps_per_update):
     train_batch_iterator = iter(dataloader)
     val_batch_iterator = iter(val_dataloader)
 
     # Training loop
-    # TODO(seungjaeryanlee): Move to CONfIG
-    num_steps_per_update = 4 # Accumulate gradient
     steps = 0
     # TODO(seungjaeryanlee): Change to epoch
     while steps < max_steps: # for epoch in range(num_epochs):
@@ -156,6 +154,8 @@ if __name__ == '__main__':
         "WEIGHT_DECAY": 0.0000001,
 
         ## Misc.
+        # Accumulate gradient
+        "NUM_STEPS_PER_UPDATE": 4,
     }
 
     # Setup wandb
@@ -209,4 +209,5 @@ if __name__ == '__main__':
         dataloader=dataloader,
         val_dataloader=val_dataloader,
         save_model=CONFIG["I3D_SAVE_MODEL_PATH"],
+        num_steps_per_update=CONFIG["NUM_STEPS_PER_UPDATE"],
     )
