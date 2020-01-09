@@ -25,7 +25,8 @@ def get_lr(optimizer):
         return param_group['lr']
 
 
-def train_i3d(i3d, max_epoch, optimizer, lr_scheduler, dataloader, val_dataloader, save_model, num_steps_per_update):
+def train_i3d(i3d, max_epoch, optimizer, lr_scheduler, dataloader, val_dataloader, save_model, num_steps_per_update, model_save_interval):
+
     train_batch_iterator = iter(dataloader)
     val_batch_iterator = iter(val_dataloader)
 
@@ -126,8 +127,7 @@ def train_i3d(i3d, max_epoch, optimizer, lr_scheduler, dataloader, val_dataloade
             }, step=steps)
 
         # Save model
-        if steps % 10 == 0:
-            # TODO(seungjaeryanlee): Move to CONFIG
+        if steps % model_save_interval == 0:
             model_filename = save_model + str(steps).zfill(6) + '.pt'
             torch.save(i3d.module.state_dict(), model_filename)
             wandb.save(model_filename)
@@ -159,7 +159,8 @@ if __name__ == '__main__':
 
         ## Misc.
         # Accumulate gradient
-        "NUM_STEPS_PER_UPDATE": 4,
+        "NUM_STEPS_`PER_UPDATE": 4,
+        "MODEL_SAVE_INTERVAL": 10,
     }
 
     # Setup wandb
@@ -214,4 +215,5 @@ if __name__ == '__main__':
         val_dataloader=val_dataloader,
         save_model=CONFIG["I3D_SAVE_MODEL_PATH"],
         num_steps_per_update=CONFIG["NUM_STEPS_PER_UPDATE"],
+        model_save_interval=CONFIG["MODEL_SAVE_INTERVAL"],
     )
