@@ -1,2 +1,4 @@
 moviepy == 1.0.0
 scikit-video
+opencv-python == 4.*
+opencv-contrib-python
