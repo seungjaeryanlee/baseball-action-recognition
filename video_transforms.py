@@ -6,6 +6,8 @@ PyTorch transforms only work for PIL images.
 import numpy as np
 import numbers
 import random
+import cv2
+
 
 class RandomCrop(object):
     """Crop the given video sequences (t x h x w) at a random location.
@@ -105,3 +107,26 @@ class RandomHorizontalFlip(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
+def get_resize_dsize(img, smaller_size):
+    width, height, _ = img.shape
+    if width < height:
+        new_width = smaller_size
+        new_height = round(new_width / width * height)
+    else:
+        new_height = smaller_size
+        new_width = round(new_height / height * width)
+
+    return (new_width, new_height)
+
+
+class Resize(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, imgs):
+        return np.asarray([cv2.resize(img, dsize=get_resize_dsize(img, 256), interpolation=cv2.INTER_LINEAR) for img in imgs])
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={})'.format(self.size)

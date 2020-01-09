@@ -149,15 +149,15 @@ if __name__ == '__main__':
     lr_scheduler = ReduceLROnPlateau(optimizer)
 
     # Setup Datasets and Dataloaders
-    # TODO(seungjaeryanlee): Setup transforms (Rescale)
-    # https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
     train_transforms = transforms.Compose([
+        video_transforms.Resize(256),
         video_transforms.RandomCrop(224),
         video_transforms.RandomHorizontalFlip(),
     ])
     val_transforms = transforms.Compose([
+        video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
     dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["train"], frameskip=CONFIG["FRAMESKIP"], transform=train_transforms)
