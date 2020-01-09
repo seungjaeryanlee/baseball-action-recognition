@@ -26,77 +26,112 @@ def get_lr(optimizer):
 
 
 def train_i3d(i3d, max_steps, optimizer, lr_scheduler, dataloader, val_dataloader, save_model):
-    dataloaders = { 'train': dataloader, 'val': val_dataloader }
+    train_batch_iterator = iter(dataloader)
+    val_batch_iterator = iter(val_dataloader)
+
     # Training loop
+    # TODO(seungjaeryanlee): Move to CONfIG
     num_steps_per_update = 4 # Accumulate gradient
     steps = 0
+    # TODO(seungjaeryanlee): Change to epoch
     while steps < max_steps: # for epoch in range(num_epochs):
         print('Step {}/{}'.format(steps, max_steps))
         print('----------')
 
-        # Each epoch has a training and validation phase
-        for phase in ['train', 'val']:
-            if phase == 'train':
-                i3d.train(True)
-            else:
-                i3d.train(False)
+        # Training phase
+        i3d.train(True)
 
-            tot_loss = 0.0
-            tot_loc_loss = 0.0
-            tot_cls_loss = 0.0
-            num_iter = 0
-            optimizer.zero_grad()
+        tot_loss = 0.0
+        tot_loc_loss = 0.0
+        tot_cls_loss = 0.0
+        num_iter = 0
+        optimizer.zero_grad()
 
-            for data in dataloaders[phase]:
-                num_iter += 1
+        try:
+            inputs, labels = next(train_batch_iterator)
+        except StopIteration:
+            train_batch_iterator = iter(dataloader)
+            inputs, labels = next(train_batch_iterator)
+        inputs = inputs.float().cuda()
+        labels = labels.cuda()
+        t = inputs.size(2)
 
-                inputs, labels = data
-                inputs = inputs.float().cuda()
-                t = inputs.size(2)
-                labels = labels.cuda()
+        for _ in range(num_steps_per_update):
+            per_frame_logits = i3d(inputs)
+            # upsample to input size
+            per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
 
-                per_frame_logits = i3d(inputs)
-                # upsample to input size
-                per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
+            # compute localization loss
+            loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
+            tot_loc_loss += loc_loss.item()
 
-                # compute localization loss
-                loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
-                tot_loc_loss += loc_loss.item()
+            # compute classification loss (with max-pooling along time B x C x T)
+            cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
+            tot_cls_loss += cls_loss.item()
 
-                # compute classification loss (with max-pooling along time B x C x T)
-                cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
-                tot_cls_loss += cls_loss.item()
+            loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
+            tot_loss += loss.item()
+            loss.backward()
 
-                loss = (0.5 * loc_loss + 0.5 * cls_loss) / num_steps_per_update
-                tot_loss += loss.item()
-                loss.backward()
+        # TODO(seungjaeryanlee): Check step increment
+        steps += 1
+        optimizer.step()
+        optimizer.zero_grad()
+        wandb.log({ "lr": get_lr(optimizer) }, step=steps)
+        if steps % 10 == 0:
+            # Save model
+            model_filename = save_model + str(steps).zfill(6) + '.pt'
+            torch.save(i3d.module.state_dict(), model_filename)
+            wandb.save(model_filename)
+            print('Train | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+                tot_loc_loss/(10*num_steps_per_update),
+                tot_cls_loss/(10*num_steps_per_update),
+                tot_loss/10,
+            ))
+            wandb.log({
+                "train_loc_loss": tot_loc_loss / (10 * num_steps_per_update),
+                "train_cls_loss": tot_cls_loss / (10 * num_steps_per_update),
+                "train_tot_loss": tot_loss / 10,
+            }, step=steps)
+            tot_loss = tot_loc_loss = tot_cls_loss = 0.
 
-                if num_iter == num_steps_per_update and phase == 'train':
-                    steps += 1
-                    num_iter = 0
-                    optimizer.step()
-                    optimizer.zero_grad()
-                    lr_scheduler.step()
-                    wandb.log({ "lr": get_lr(optimizer) }, step=steps)
-                    if steps % 10 == 0:
-                        # Save model
-                        model_filename = save_model + str(steps).zfill(6) + '.pt'
-                        torch.save(i3d.module.state_dict(), model_filename)
-                        wandb.save(model_filename)
-                        print('{} Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(phase, tot_loc_loss/(10*num_steps_per_update), tot_cls_loss/(10*num_steps_per_update), tot_loss/10))
-                        wandb.log({
-                            "train_loc_loss": tot_loc_loss / (10 * num_steps_per_update),
-                            "train_cls_loss": tot_cls_loss / (10 * num_steps_per_update),
-                            "train_tot_loss": tot_loss / 10,
-                        }, step=steps)
-                        tot_loss = tot_loc_loss = tot_cls_loss = 0.
-            if phase == 'val':
-                print('{} Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(phase, tot_loc_loss/num_iter, tot_cls_loss/num_iter, (tot_loss*num_steps_per_update)/num_iter))
-                wandb.log({
-                    "val_loc_loss": tot_loc_loss/num_iter,
-                    "val_cls_loss": tot_cls_loss/num_iter,
-                    "val_tot_loss": (tot_loss * num_steps_per_update) / num_iter,
-                }, step=steps)
+        # Validation phase
+        i3d.train(False)
+
+        with torch.no_grad():
+            try:
+                inputs, labels = next(val_batch_iterator)
+            except StopIteration:
+                val_batch_iterator = iter(val_dataloader)
+                inputs, labels = next(val_batch_iterator)
+            inputs = inputs.float().cuda()
+            labels = labels.cuda()
+            t = inputs.size(2)
+
+            per_frame_logits = i3d(inputs)
+            # upsample to input size
+            per_frame_logits = F.upsample(per_frame_logits, t, mode='linear')
+
+            # compute localization loss
+            val_loc_loss = F.binary_cross_entropy_with_logits(per_frame_logits, labels)
+
+            # compute classification loss (with max-pooling along time B x C x T)
+            val_cls_loss = F.binary_cross_entropy_with_logits(torch.max(per_frame_logits, dim=2)[0], torch.max(labels, dim=2)[0])
+
+            val_loss = 0.5 * val_loc_loss + 0.5 * val_cls_loss
+
+            print('Valid | Loc Loss: {:.4f} Cls Loss: {:.4f} Tot Loss: {:.4f}'.format(
+                val_loc_loss.item(),
+                val_cls_loss.item(),
+                val_loss.item(),
+            ))
+            wandb.log({
+                "val_loc_loss": val_loc_loss.item(),
+                "val_cls_loss": val_cls_loss.item(),
+                "val_tot_loss": val_loss.item(),
+            }, step=steps)
+
+        lr_scheduler.step(val_loss)
 
 
 if __name__ == '__main__':
