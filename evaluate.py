@@ -40,7 +40,11 @@ def evaluate_i3d(i3d, dataset, dataloader):
             len(all_predictions) * len(all_predictions[0])
         ))
 
-    return np.concatenate(all_predictions), np.concatenate(all_labels)
+    return (
+        correct_count / len(dataset),
+        np.concatenate(all_predictions),
+        np.concatenate(all_labels),
+    )
 
 
 if __name__ == '__main__':
@@ -79,10 +83,11 @@ if __name__ == '__main__':
     dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["test"], frameskip=CONFIG["FRAMESKIP"], transform=test_transforms)
     dataloader = DataLoader(dataset, batch_size=CONFIG["BATCH_SIZE"], pin_memory=True)
 
-    predictions, labels = evaluate_i3d(i3d=rgb_i3d, dataset=dataset, dataloader=dataloader)
+    accuracy, predictions, labels = evaluate_i3d(i3d=rgb_i3d, dataset=dataset, dataloader=dataloader)
 
     with open(CONFIG["RGB_I3D_LOAD_MODEL_PATH"].replace(".pt", ".json"), "w+") as fp:
         json.dump({
+            "accuracy": accuracy,
             "predictions": predictions.tolist(),
             "labels": labels.tolist(),
         }, fp)
