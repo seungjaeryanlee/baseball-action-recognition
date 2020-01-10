@@ -182,8 +182,7 @@ if __name__ == '__main__':
     i3d.replace_logits(bbdb_dataset.NUM_LABELS)
     if CONFIG["I3D_LOAD_MODEL_PATH"]:
         i3d.load_state_dict(torch.load(CONFIG["I3D_LOAD_MODEL_PATH"]))
-    # TODO(seungjaeryanlee): Is this not on GPU?
-    i3d.cuda()
+    i3d = i3d.cuda()
     i3d = nn.DataParallel(i3d)
 
     # Setup optimizer and lr_scheduler
