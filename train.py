@@ -46,18 +46,17 @@ def train_i3d(i3d, max_epoch, optimizer, lr_scheduler, dataloader, val_dataloade
         num_iter = 0
         optimizer.zero_grad()
 
-        try:
-            inputs, labels = next(train_batch_iterator)
-        except StopIteration:
-            train_batch_iterator = iter(dataloader)
-            inputs, labels = next(train_batch_iterator)
-            current_epoch += 1
-        inputs = inputs.float().cuda()
-        labels = labels.cuda()
-        t = inputs.size(2)
-
         for _ in range(num_steps_per_update):
             steps += 1
+            try:
+                inputs, labels = next(train_batch_iterator)
+            except StopIteration:
+                train_batch_iterator = iter(dataloader)
+                inputs, labels = next(train_batch_iterator)
+                current_epoch += 1
+            inputs = inputs.float().cuda()
+            labels = labels.cuda()
+            t = inputs.size(2)
 
             per_frame_logits = i3d(inputs)
             # upsample to input size
