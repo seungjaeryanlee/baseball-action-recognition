@@ -16,6 +16,6 @@ This repository has two script files to
 Run the two lines below in order
 
 ```bash
-python download_bbdb.py -n 45
+python download_bbdb.py -i bbdb.selected.v0.9.min.json
 python extract_segments_from_videos.py
 ```
