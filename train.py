@@ -146,10 +146,11 @@ if __name__ == '__main__':
         "I3D_SAVE_MODEL_PATH": "models/",
 
         ## Data
-        "FRAMESKIP": 1, # TODO(seungjaeryanlee): 1, 4, ?
+        "SEGMENT_LENGTH": 37,
+        "FRAMESKIP": 4, # TODO(seungjaeryanlee): 1, 4, ?
 
         ## Training
-        "MAX_EPOCH": 3,
+        "MAX_EPOCH": 2,
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
         "BATCH_SIZE": 4,
 
@@ -161,8 +162,10 @@ if __name__ == '__main__':
         ## Misc.
         # Accumulate gradient
         "NUM_STEPS_PER_UPDATE": 4,
-        "MODEL_SAVE_INTERVAL": 10,
+        "MODEL_SAVE_INTERVAL": 1000,
     }
+    assert CONFIG["SEGMENT_LENGTH"] * CONFIG["FRAMESKIP"] <= 150
+
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     CONFIG["I3D_SAVE_MODEL_PATH"] = CONFIG["I3D_SAVE_MODEL_PATH"] + timestamp + "/"
     Path(CONFIG["I3D_SAVE_MODEL_PATH"]).mkdir(parents=True, exist_ok=True)
@@ -206,10 +209,20 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["train"], frameskip=CONFIG["FRAMESKIP"], transform=train_transforms)
+    dataset = bbdb_dataset.BBDBDataset(
+        segment_filepaths=data_split["train"],
+        segment_length=CONFIG["SEGMENT_LENGTH"],
+        frameskip=CONFIG["FRAMESKIP"],
+        transform=train_transforms,
+    )
     dataloader = DataLoader(dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
 
-    val_dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["valid"], frameskip=CONFIG["FRAMESKIP"], transform=val_transforms)
+    val_dataset = bbdb_dataset.BBDBDataset(
+        segment_filepaths=data_split["valid"],
+        segment_length=CONFIG["SEGMENT_LENGTH"],
+        frameskip=CONFIG["FRAMESKIP"],
+        transform=val_transforms,
+    )
     val_dataloader = DataLoader(val_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
 
     train_i3d(

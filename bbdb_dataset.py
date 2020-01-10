@@ -82,12 +82,10 @@ class BBDBDataset(Dataset):
     PyTorch Dataset class for Baseball Database (BBDB).
     """
 
-    def __init__(self, segment_filepaths, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+    def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+        self.segment_length = segment_length
         self.frameskip = frameskip
         self.transform = transform
-
-        # TODO(seungjaeryanlee): Seems like we need same number of frames per segment?
-        self.segment_length = 150
 
         self.segment_filepaths = segment_filepaths
         with open(meta_path) as fp:
