@@ -26,9 +26,11 @@ def evaluate_i3d(i3d, dataset, dataloader):
             t = inputs.size(2)
 
             per_frame_logits = i3d(inputs)
-            predictions_per_frame = per_frame_logits.max(dim=1)[1]
-            predictions = torch.mode(predictions_per_frame)[0]
-            labels = labels[:, 0, 0]
+
+            # For prediction, use the last frame prediction only
+            predictions = per_frame_logits.max(dim=1)[1][:, -1]
+            # One-hot to index
+            labels = (labels[:,:,0] == 1).nonzero()[:, 1]
 
             all_predictions.append(predictions.cpu().numpy())
             all_labels.append(labels.long().cpu().numpy())
