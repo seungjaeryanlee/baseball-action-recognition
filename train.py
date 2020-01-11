@@ -136,6 +136,11 @@ def train_i3d(i3d, max_epoch, optimizer, lr_scheduler, dataloader, val_dataloade
         # Update learning rate
         lr_scheduler.step(val_loss)
 
+    # Save final model
+    model_filename = save_model + str(steps).zfill(6) + '_final.pt'
+    torch.save(i3d.module.state_dict(), model_filename)
+    wandb.save(model_filename)
+
 
 if __name__ == '__main__':
     CONFIG = {
