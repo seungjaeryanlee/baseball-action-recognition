@@ -91,6 +91,15 @@ class BBDBDataset(Dataset):
         with open(meta_path) as fp:
             self.meta = json.load(fp)
 
+        self.label_counts = np.zeros(NUM_LABELS)
+        for segment_filepath in self.segment_filepaths:
+            z = re.match("\./segments/(\w+)/(\w+).mp4", segment_filepath)
+            # NOTE(seungjaeryanlee): segment_index is per video, not global
+            gamecode, segment_index = z.groups()
+            segment_index = int(segment_index)
+            label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
+            self.label_counts[label_index] += 1
+
     def __getitem__(self, index):
         """
         Return a segment with a given index.
