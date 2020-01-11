@@ -52,12 +52,13 @@ def evaluate_i3d(i3d, dataset, dataloader):
 if __name__ == '__main__':
     CONFIG = {
         ## I3D
-        "RGB_I3D_LOAD_MODEL_PATH": "models/20200109-074303/018760.pt",
+        "RGB_I3D_LOAD_MODEL_PATH": "models/20200110-054139/004000.pt",
         # TODO(seungjaeryanlee): Flow I3D Not yet integrated
         "FLOW_I3D_LOAD_MODEL_PATH": "",
 
         ## Data
-        "FRAMESKIP": 1, # TODO(seungjaeryanlee): 1, 4, ?
+        "SEGMENT_LENGTH": 37,
+        "FRAMESKIP": 4,
 
         ## Training
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
@@ -82,7 +83,12 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    dataset = bbdb_dataset.BBDBDataset(segment_filepaths=data_split["test"], frameskip=CONFIG["FRAMESKIP"], transform=test_transforms)
+    dataset = bbdb_dataset.BBDBDataset(
+        segment_filepaths=data_split["test"],
+        segment_length=CONFIG["SEGMENT_LENGTH"],
+        frameskip=CONFIG["FRAMESKIP"],
+        transform=test_transforms
+    )
     dataloader = DataLoader(dataset, batch_size=CONFIG["BATCH_SIZE"], pin_memory=True)
 
     accuracy, predictions, labels = evaluate_i3d(i3d=rgb_i3d, dataset=dataset, dataloader=dataloader)

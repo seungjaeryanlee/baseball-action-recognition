@@ -152,7 +152,7 @@ if __name__ == '__main__':
 
         ## Data
         "SEGMENT_LENGTH": 37,
-        "FRAMESKIP": 4, # TODO(seungjaeryanlee): 1, 4, ?
+        "FRAMESKIP": 4,
 
         ## Training
         "MAX_EPOCH": 2,

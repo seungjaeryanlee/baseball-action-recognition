@@ -149,6 +149,6 @@ class BBDBDataset(Dataset):
 if __name__ == "__main__":
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
-    dataset = BBDBDataset(segment_filepaths=data_split["train"], frameskip=1)
+    dataset = BBDBDataset(segment_filepaths=data_split["train"], segment_length=150, frameskip=1)
     print(dataset[0][0].shape)
     print(len(dataset))
