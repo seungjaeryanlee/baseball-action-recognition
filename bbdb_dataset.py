@@ -129,6 +129,9 @@ class BBDBDataset(Dataset):
 
         data = data[0:self.segment_length]
 
+        # Normalize from [0, 255] to [-1, 1]
+        data = data.astype(float) / 255. * 2 - 1
+
         # Change order of dimensions from (length, height, width, channel) to (channel, length, height, width)
         # NOTE(seungjaeryanlee): This must come after transforms
         data = data.transpose([3, 0, 1, 2])
