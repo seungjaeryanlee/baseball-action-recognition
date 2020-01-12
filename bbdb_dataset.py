@@ -155,6 +155,19 @@ class BBDBDataset(Dataset):
         return len(self.segment_filepaths)
 
 
+class DebugBBDBDataset(BBDBDataset):
+    def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+        super().__init__(
+            label_modifier={ i: i for i in range(30) },
+            segment_filepaths=segment_filepaths,
+            segment_length=segment_length,
+            frameskip=frameskip,
+            transform=transform,
+            meta_path=meta_path,
+        )
+        self.segment_filepaths = segment_filepaths[:1]
+
+
 class OriginalBBDBDataset(BBDBDataset):
     def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         super().__init__(

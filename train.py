@@ -151,14 +151,14 @@ if __name__ == '__main__':
         "I3D_SAVE_MODEL_PATH": "models/",
 
         ## Data
-        "DATASET": "binary", # ["original", "binary"]
+        "DATASET": "debug", # ["original", "binary"]
         "SEGMENT_LENGTH": 150,
         "FRAMESKIP": 1,
 
         ## Training
-        "MAX_EPOCH": 2,
+        "MAX_EPOCH": 1000,
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
-        "BATCH_SIZE": 4,
+        "BATCH_SIZE": 1,
 
         ## Learning Rate
         "INIT_LR": 0.1,
@@ -186,6 +186,8 @@ if __name__ == '__main__':
         Dataset = bbdb_dataset.OriginalBBDBDataset
     elif CONFIG["DATASET"] == "binary":
         Dataset = bbdb_dataset.BinaryBBDBDataset
+    elif CONFIG["DATASET"] == "debug":
+        Dataset = bbdb_dataset.DebugBBDBDataset
     else:
         assert False
 
