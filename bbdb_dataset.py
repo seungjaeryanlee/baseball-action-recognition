@@ -100,24 +100,6 @@ class BBDBDataset(Dataset):
             label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
             self.label_counts[label_index] += 1
 
-        # Fix class imbalance
-        MAX_CLASS_LABEL = 100
-        # TODO(seungjaeryanlee): Refactor
-        new_segment_filepaths = []
-        current_label_counts = np.zeros(NUM_LABELS)
-        for segment_filepath in self.segment_filepaths:
-            z = re.match("\./segments/(\w+)/(\w+).mp4", segment_filepath)
-            # NOTE(seungjaeryanlee): segment_index is per video, not global
-            gamecode, segment_index = z.groups()
-            segment_index = int(segment_index)
-            label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
-            if current_label_counts[label_index] < MAX_CLASS_LABEL:
-                current_label_counts[label_index] += 1
-                new_segment_filepaths.append(segment_filepath)
-
-        self.segment_filepaths = new_segment_filepaths
-        self.label_counts = current_label_counts
-
 
     def __getitem__(self, index):
         """

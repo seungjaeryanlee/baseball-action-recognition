@@ -52,7 +52,7 @@ def evaluate_i3d(i3d, dataset, dataloader):
 if __name__ == '__main__':
     CONFIG = {
         ## I3D
-        "RGB_I3D_LOAD_MODEL_PATH": "models/20200111-140722/004452_final.pt",
+        "RGB_I3D_LOAD_MODEL_PATH": "models/20200111-233050/000844_final.pt",
         # TODO(seungjaeryanlee): Flow I3D Not yet integrated
         "FLOW_I3D_LOAD_MODEL_PATH": "",
 
