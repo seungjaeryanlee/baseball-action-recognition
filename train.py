@@ -151,8 +151,8 @@ if __name__ == '__main__':
         "I3D_SAVE_MODEL_PATH": "models/",
 
         ## Data
-        "SEGMENT_LENGTH": 37,
-        "FRAMESKIP": 4,
+        "SEGMENT_LENGTH": 150,
+        "FRAMESKIP": 1,
 
         ## Training
         "MAX_EPOCH": 2,
@@ -208,6 +208,7 @@ if __name__ == '__main__':
     train_transforms = transforms.Compose([
         video_transforms.Resize(256),
         video_transforms.RandomCrop(224),
+        # TODO(seungjaeryanlee): Perhaps not needed
         video_transforms.RandomHorizontalFlip(),
     ])
     val_transforms = transforms.Compose([
