@@ -180,28 +180,6 @@ if __name__ == '__main__':
     # Setup wandb
     wandb.init(project="baseball-action-recognition", config=CONFIG)
 
-    # Setup I3D
-    # Choose RGB-I3D or Flow-I3D
-    if CONFIG["I3D_MODE"] == 'flow':
-        i3d = InceptionI3d(400, in_channels=2)
-    else:
-        i3d = InceptionI3d(400, in_channels=3)
-    i3d.load_state_dict(torch.load('pretrained_models/{}_{}.pt'.format(CONFIG["I3D_MODE"], CONFIG["I3D_PRETRAINED_DATASET"])))
-    i3d.replace_logits(bbdb_dataset.NUM_LABELS)
-    if CONFIG["I3D_LOAD_MODEL_PATH"]:
-        i3d.load_state_dict(torch.load(CONFIG["I3D_LOAD_MODEL_PATH"]))
-    i3d = i3d.cuda()
-    i3d = nn.DataParallel(i3d)
-
-    # Setup optimizer and lr_scheduler
-    optimizer = optim.SGD(
-        i3d.parameters(),
-        lr=CONFIG["INIT_LR"],
-        momentum=CONFIG["MOMENTUM"],
-        weight_decay=CONFIG["WEIGHT_DECAY"],
-    )
-    lr_scheduler = ReduceLROnPlateau(optimizer)
-
     # Setup Datasets and Dataloaders
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
@@ -215,7 +193,7 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    dataset = bbdb_dataset.BBDBDataset(
+    dataset = bbdb_dataset.OriginalBBDBDataset(
         segment_filepaths=data_split["train"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -223,13 +201,35 @@ if __name__ == '__main__':
     )
     dataloader = DataLoader(dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
 
-    val_dataset = bbdb_dataset.BBDBDataset(
+    val_dataset = bbdb_dataset.OriginalBBDBDataset(
         segment_filepaths=data_split["valid"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
         transform=val_transforms,
     )
     val_dataloader = DataLoader(val_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
+
+    # Setup I3D
+    # Choose RGB-I3D or Flow-I3D
+    if CONFIG["I3D_MODE"] == 'flow':
+        i3d = InceptionI3d(400, in_channels=2)
+    else:
+        i3d = InceptionI3d(400, in_channels=3)
+    i3d.load_state_dict(torch.load('pretrained_models/{}_{}.pt'.format(CONFIG["I3D_MODE"], CONFIG["I3D_PRETRAINED_DATASET"])))
+    i3d.replace_logits(dataset.NUM_LABELS)
+    if CONFIG["I3D_LOAD_MODEL_PATH"]:
+        i3d.load_state_dict(torch.load(CONFIG["I3D_LOAD_MODEL_PATH"]))
+    i3d = i3d.cuda()
+    i3d = nn.DataParallel(i3d)
+
+    # Setup optimizer and lr_scheduler
+    optimizer = optim.SGD(
+        i3d.parameters(),
+        lr=CONFIG["INIT_LR"],
+        momentum=CONFIG["MOMENTUM"],
+        weight_decay=CONFIG["WEIGHT_DECAY"],
+    )
+    lr_scheduler = ReduceLROnPlateau(optimizer)
 
     train_i3d(
         i3d=i3d,

@@ -66,16 +66,6 @@ if __name__ == '__main__':
     }
     assert CONFIG["RGB_I3D_LOAD_MODEL_PATH"] or CONFIG["FLOW_I3D_LOAD_MODEL_PATH"]
 
-    # Setup I3D
-    # TODO(seungjaeryanlee): Allow choosing both
-    if CONFIG["RGB_I3D_LOAD_MODEL_PATH"]:
-        rgb_i3d = InceptionI3d(400, in_channels=3)
-        rgb_i3d.replace_logits(bbdb_dataset.NUM_LABELS)
-        rgb_i3d.load_state_dict(torch.load(CONFIG["RGB_I3D_LOAD_MODEL_PATH"]))
-        rgb_i3d = rgb_i3d.cuda()
-        # TODO(seungjaeryanlee): Not needed?
-        rgb_i3d = nn.DataParallel(rgb_i3d)
-
     # Setup Dataset and Dataloader
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
@@ -83,13 +73,23 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    dataset = bbdb_dataset.BBDBDataset(
+    dataset = bbdb_dataset.OriginalBBDBDataset(
         segment_filepaths=data_split["test"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
         transform=test_transforms
     )
     dataloader = DataLoader(dataset, batch_size=CONFIG["BATCH_SIZE"], pin_memory=True)
+
+    # Setup I3D
+    # TODO(seungjaeryanlee): Allow choosing both
+    if CONFIG["RGB_I3D_LOAD_MODEL_PATH"]:
+        rgb_i3d = InceptionI3d(400, in_channels=3)
+        rgb_i3d.replace_logits(dataset.NUM_LABELS)
+        rgb_i3d.load_state_dict(torch.load(CONFIG["RGB_I3D_LOAD_MODEL_PATH"]))
+        rgb_i3d = rgb_i3d.cuda()
+        # TODO(seungjaeryanlee): Not needed?
+        rgb_i3d = nn.DataParallel(rgb_i3d)
 
     accuracy, predictions, labels = evaluate_i3d(i3d=rgb_i3d, dataset=dataset, dataloader=dataloader)
 

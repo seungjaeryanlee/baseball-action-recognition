@@ -10,7 +10,6 @@ import skvideo.io
 from torch.utils.data import Dataset
 
 
-NUM_LABELS = 30
 LABEL_ID_TO_STR = {
     0: "Ball",
     1: "Strike",
@@ -82,23 +81,31 @@ class BBDBDataset(Dataset):
     PyTorch Dataset class for Baseball Database (BBDB).
     """
 
-    def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+    def __init__(self, label_modifier, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         self.segment_length = segment_length
         self.frameskip = frameskip
         self.transform = transform
 
-        self.segment_filepaths = segment_filepaths
+        self.label_modifier = label_modifier
+        self.NUM_LABELS = len(set(label_modifier.values()))
+        if None in set(label_modifier.values()):
+            self.NUM_LABELS -= 1
+
         with open(meta_path) as fp:
             self.meta = json.load(fp)
 
-        self.label_counts = np.zeros(NUM_LABELS)
-        for segment_filepath in self.segment_filepaths:
+        self.segment_filepaths = []
+        self.label_counts = np.zeros(self.NUM_LABELS)
+        for segment_filepath in segment_filepaths:
             z = re.match("\./segments/(\w+)/(\w+).mp4", segment_filepath)
             # NOTE(seungjaeryanlee): segment_index is per video, not global
             gamecode, segment_index = z.groups()
             segment_index = int(segment_index)
-            label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
-            self.label_counts[label_index] += 1
+            original_label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
+            label_index = label_modifier[original_label_index]
+            if label_index is not None:
+                self.label_counts[label_index] += 1
+                self.segment_filepaths.append(segment_filepath)
 
 
     def __getitem__(self, index):
@@ -138,7 +145,7 @@ class BBDBDataset(Dataset):
         data = data.transpose([3, 0, 1, 2])
 
         # Change label to onehot label per image
-        onehot_label = np.zeros((NUM_LABELS, self.segment_length), dtype=np.float32)
+        onehot_label = np.zeros((self.NUM_LABELS, self.segment_length), dtype=np.float32)
         onehot_label[label_index, :] = 1
 
         return data, onehot_label
@@ -147,9 +154,70 @@ class BBDBDataset(Dataset):
         return len(self.segment_filepaths)
 
 
+class OriginalBBDBDataset(BBDBDataset):
+    def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+        super().__init__(
+            label_modifier={ i: i for i in range(30) },
+            segment_filepaths=segment_filepaths,
+            segment_length=segment_length,
+            frameskip=frameskip,
+            transform=transform,
+            meta_path=meta_path,
+        )
+
+
+class BinaryBBDBDataset(BBDBDataset):
+    def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
+        binary_label_modifier = {
+            0: 0, # "Ball": "No hit",
+            1: 0, # "Strike": "No hit",
+            2: 1, # "Foul": "Batting",
+            3: 0, # "Swing and a miss": "No hit",
+            4: 1, # "Fly out": "Batting",
+            5: 1, # "Ground out": "Batting",
+            6: 1, # "One-base hit": "Batting",
+            7: 0, # "Strike out": "No hit",
+            8: 1, # "Home in": "Batting",
+            9: 0, # "Base on balls": "No hit",
+            10: 1, # "Touch out": "Batting",
+            11: 1, # "Two-base hit": "Batting",
+            12: 1, # "Homerun": "Batting",
+            13: 1, # "Foul fly out": "Batting",
+            14: 1, # "Double play": "Batting",
+            15: 1, # "Tag out": "Batting",
+            16: None, # "Stealing base": None,
+            17: 1, # "Infield hit": "Batting",
+            18: 1, # "Line-drive out": "Batting",
+            19: 1, # "Error": "Batting",
+            20: 0, # "Hit by pitch": "No hit",
+            21: 1, # "Bunt foul": "Batting",
+            22: 0, # "Wild pitch": "No hit",
+            23: 1, # "Sacrifice bunt out": "Batting",
+            24: None, # "Caught stealing": None,
+            25: 1, # "Three-base hit": "Batting",
+            26: 1, # "Bunt hit": "Batting",
+            27: 1, # "Bunt out": "Batting",
+            28: 0, # "Passed ball": "No hit",
+            29: None, # "Pickoff out": None,
+        }
+
+        super().__init__(
+            label_modifier=binary_label_modifier,
+            segment_length=segment_length,
+            segment_filepaths=segment_filepaths,
+            frameskip=frameskip,
+            transform=transform,
+            meta_path=meta_path,
+        )
+
+
 if __name__ == "__main__":
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
-    dataset = BBDBDataset(segment_filepaths=data_split["train"], segment_length=150, frameskip=1)
-    print(dataset[0][0].shape)
+    dataset = OriginalBBDBDataset(segment_filepaths=data_split["train"], segment_length=150, frameskip=1)
+    print(dataset.label_counts)
+    print(len(dataset))
+
+    dataset = BinaryBBDBDataset(segment_filepaths=data_split["train"], segment_length=150, frameskip=1)
+    print(dataset.label_counts)
     print(len(dataset))

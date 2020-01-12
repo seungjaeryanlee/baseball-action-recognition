@@ -49,7 +49,7 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    train_dataset = bbdb_dataset.BBDBDataset(
+    train_dataset = bbdb_dataset.OriginalBBDBDataset(
         segment_filepaths=data_split["train"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     )
     dataloader = DataLoader(train_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
 
-    val_dataset = bbdb_dataset.BBDBDataset(
+    val_dataset = bbdb_dataset.OriginalBBDBDataset(
         segment_filepaths=data_split["valid"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     )
     val_dataloader = DataLoader(val_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
     
-    test_dataset = bbdb_dataset.BBDBDataset(
+    test_dataset = bbdb_dataset.OriginalBBDBDataset(
         segment_filepaths=data_split["test"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -76,9 +76,9 @@ if __name__ == '__main__':
     # Plot histogram of labels in datasets
     fig, axs = plt.subplots(1, 3, sharey=True, figsize=(20, 5))
     axs[0].set_title("Training set")
-    axs[0].bar(range(bbdb_dataset.NUM_LABELS), train_dataset.label_counts / sum(train_dataset.label_counts))
+    axs[0].bar(range(train_dataset.NUM_LABELS), train_dataset.label_counts / sum(train_dataset.label_counts))
     axs[1].set_title("Validation set")
-    axs[1].bar(range(bbdb_dataset.NUM_LABELS), val_dataset.label_counts / sum(val_dataset.label_counts))
+    axs[1].bar(range(val_dataset.NUM_LABELS), val_dataset.label_counts / sum(val_dataset.label_counts))
     axs[2].set_title("Test set")
-    axs[2].bar(range(bbdb_dataset.NUM_LABELS), test_dataset.label_counts / sum(test_dataset.label_counts))
+    axs[2].bar(range(test_dataset.NUM_LABELS), test_dataset.label_counts / sum(test_dataset.label_counts))
     plt.show()
