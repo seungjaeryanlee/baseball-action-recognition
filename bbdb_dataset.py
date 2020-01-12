@@ -102,7 +102,7 @@ class BBDBDataset(Dataset):
             gamecode, segment_index = z.groups()
             segment_index = int(segment_index)
             original_label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
-            label_index = label_modifier[original_label_index]
+            label_index = self.label_modifier[original_label_index]
             if label_index is not None:
                 self.label_counts[label_index] += 1
                 self.segment_filepaths.append(segment_filepath)
@@ -122,7 +122,8 @@ class BBDBDataset(Dataset):
 
         # Get metadata
         fps = self.meta["database"][gamecode]["fps"]
-        label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
+        original_label_index = self.meta["database"][gamecode]["annotations"][segment_index]["labelIndex"]
+        label_index = self.label_modifier[original_label_index]
 
         data = skvideo.io.vread(segment_filepath)
 
