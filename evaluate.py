@@ -57,6 +57,7 @@ if __name__ == '__main__':
         "FLOW_I3D_LOAD_MODEL_PATH": "",
 
         ## Data
+        "DATASET": "binary",
         "SEGMENT_LENGTH": 150,
         "FRAMESKIP": 1,
 
@@ -67,13 +68,20 @@ if __name__ == '__main__':
     assert CONFIG["RGB_I3D_LOAD_MODEL_PATH"] or CONFIG["FLOW_I3D_LOAD_MODEL_PATH"]
 
     # Setup Dataset and Dataloader
+    if CONFIG["DATASET"] == "original":
+        Dataset = bbdb_dataset.OriginalBBDBDataset
+    elif CONFIG["DATASET"] == "binary":
+        Dataset = bbdb_dataset.BinaryBBDBDataset
+    else:
+        assert False
+
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
     test_transforms = transforms.Compose([
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    dataset = bbdb_dataset.OriginalBBDBDataset(
+    dataset = Dataset(
         segment_filepaths=data_split["test"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],

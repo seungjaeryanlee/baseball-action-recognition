@@ -151,6 +151,7 @@ if __name__ == '__main__':
         "I3D_SAVE_MODEL_PATH": "models/",
 
         ## Data
+        "DATASET": "binary", # ["original", "binary"]
         "SEGMENT_LENGTH": 150,
         "FRAMESKIP": 1,
 
@@ -181,6 +182,13 @@ if __name__ == '__main__':
     wandb.init(project="baseball-action-recognition", config=CONFIG)
 
     # Setup Datasets and Dataloaders
+    if CONFIG["DATASET"] == "original":
+        Dataset = bbdb_dataset.OriginalBBDBDataset
+    elif CONFIG["DATASET"] == "binary":
+        Dataset = bbdb_dataset.BinaryBBDBDataset
+    else:
+        assert False
+
     with open("data_split.min.json", "r") as fp:
         data_split = json.load(fp)
     train_transforms = transforms.Compose([
@@ -193,7 +201,7 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    dataset = bbdb_dataset.OriginalBBDBDataset(
+    dataset = Dataset(
         segment_filepaths=data_split["train"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -201,7 +209,7 @@ if __name__ == '__main__':
     )
     dataloader = DataLoader(dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
 
-    val_dataset = bbdb_dataset.OriginalBBDBDataset(
+    val_dataset = Dataset(
         segment_filepaths=data_split["valid"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
