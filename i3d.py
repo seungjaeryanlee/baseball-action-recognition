@@ -318,7 +318,16 @@ class InceptionI3d(nn.Module):
     def build(self):
         for k in self.end_points.keys():
             self.add_module(k, self.end_points[k])
-        
+
+    def get_embedding(self, x):
+        for end_point in self.VALID_ENDPOINTS:
+            if end_point in self.end_points:
+                x = self._modules[end_point](x) # use _modules to work with dataparallel
+
+        x = self.avg_pool(x)
+
+        return x
+
     def forward(self, x):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
