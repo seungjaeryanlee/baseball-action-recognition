@@ -1,3 +1,6 @@
+"""
+Script to generate a smaller meta JSON file for BBDB that only contains info about used video segments.
+"""
 import json
 import glob
 

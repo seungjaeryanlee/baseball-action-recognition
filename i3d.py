@@ -1,3 +1,8 @@
+"""
+I3D model implemented in PyTorch
+
+From https://github.com/piergiaj/pytorch-i3d
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

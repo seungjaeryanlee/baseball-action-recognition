@@ -1,3 +1,6 @@
+"""
+Generate t-SNE plot using embeddings from a trained model.
+"""
 import json
 
 import numpy as np

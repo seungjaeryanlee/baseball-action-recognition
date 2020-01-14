@@ -2,7 +2,10 @@ import numpy as np
 import json
 
 
-with open("models/20200113-100601/002240_final.json", "r") as fp:
+# with open("models/20200112-164221/004440_final.json", "r") as fp:
+with open("models/20200114-104946/002240_final.json", "r") as fp:
+# with open("models/20200113-080640/002240_final.json", "r") as fp:
+# with open("models/20200113-100601/002240_final.json", "r") as fp:
     data = json.load(fp)
 
 predictions = np.array(data["predictions"])

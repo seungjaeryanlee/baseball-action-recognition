@@ -1,3 +1,6 @@
+"""
+Training script for I3D.
+"""
 import os
 import json
 import argparse
@@ -152,8 +155,8 @@ if __name__ == '__main__':
 
         ## Data
         "DATASET": "binary", # ["original", "binary"]
-        "SEGMENT_LENGTH": 75,
-        "FRAMESKIP": 2,
+        "SEGMENT_LENGTH": 150,
+        "FRAMESKIP": 1,
 
         ## Training
         "MAX_EPOCH": 1,

@@ -80,7 +80,6 @@ class BBDBDataset(Dataset):
     """
     PyTorch Dataset class for Baseball Database (BBDB).
     """
-
     def __init__(self, label_modifier, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         self.segment_length = segment_length
         self.frameskip = frameskip
@@ -156,6 +155,9 @@ class BBDBDataset(Dataset):
 
 
 class DebugBBDBDataset(BBDBDataset):
+    """
+    A debug-only BBDB Dataset that only contains one video segment.
+    """
     def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         super().__init__(
             label_modifier={ i: i for i in range(30) },
@@ -169,6 +171,9 @@ class DebugBBDBDataset(BBDBDataset):
 
 
 class OriginalBBDBDataset(BBDBDataset):
+    """
+    The original BBDB Dataset.
+    """
     def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         super().__init__(
             label_modifier={ i: i for i in range(30) },
@@ -181,6 +186,9 @@ class OriginalBBDBDataset(BBDBDataset):
 
 
 class BinaryBBDBDataset(BBDBDataset):
+    """
+    An easier BBDB Dataset that uses only two labels: "Batting" and "No hit".
+    """
     def __init__(self, segment_filepaths, segment_length, frameskip, transform=None, meta_path="./bbdb.v0.9.min.json"):
         binary_label_modifier = {
             0: 0, # "Ball": "No hit",

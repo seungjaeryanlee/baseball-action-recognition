@@ -1,3 +1,6 @@
+"""
+Script to extract annotated video segments from full games in the Baseball Database (BBDB).
+"""
 import os
 import json
 from moviepy.editor import VideoFileClip
@@ -31,6 +34,7 @@ def main():
         for file in files:
             if '.mp4' in file:
                 extract(file, meta)
+
 
 if __name__ == "__main__":
     main()

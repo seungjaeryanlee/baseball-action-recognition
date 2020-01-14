@@ -1,5 +1,5 @@
 """
-Script to download Baseball Database (BBDB).
+Script to download the Baseball Database (BBDB).
 """
 import os
 import json

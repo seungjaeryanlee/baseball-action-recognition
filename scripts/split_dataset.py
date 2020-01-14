@@ -1,3 +1,6 @@
+"""
+Script to split the dataset into train-valid-test split.
+"""
 import glob
 import json
 import random

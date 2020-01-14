@@ -1,7 +1,8 @@
 """
-Transforms for videos.
+Transforms for videos, as PyTorch transforms only work for PIL images.
 
-PyTorch transforms only work for PIL images.
+RandomCrop, CenterCrop, and RandomHorizontalFlip from https://github.com/piergiaj/pytorch-i3d
+Resize implemented ourselves
 """
 import numpy as np
 import numbers

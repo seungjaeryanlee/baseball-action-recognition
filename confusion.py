@@ -13,8 +13,9 @@ labels = np.array(labels)
 labels = labels[(labels != 16) & (labels != 24) & (labels != 29)]
 
 # with open("models/20200112-164221/004440_final.json", "r") as fp:
+with open("models/20200114-104946/002240_final.json", "r") as fp:
 # with open("models/20200113-080640/002240_final.json", "r") as fp:
-with open("models/20200113-100601/002240_final.json", "r") as fp:
+# with open("models/20200113-100601/002240_final.json", "r") as fp:
     data = json.load(fp)
     binary_predictions = data["predictions"]
     binary_labels = data["labels"]

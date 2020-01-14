@@ -1,3 +1,6 @@
+"""
+Plot histograms that show class imbalance.
+"""
 import json
 
 import numpy as np
@@ -18,12 +21,8 @@ import matplotlib.animation as animation
 
 if __name__ == '__main__':
     CONFIG = {
-        ## I3D
-        "RGB_I3D_LOAD_MODEL_PATH": "models/20200110-054139/004000.pt",
-        # TODO(seungjaeryanlee): Flow I3D Not yet integrated
-        "FLOW_I3D_LOAD_MODEL_PATH": "",
-
         ## Data
+        "DATASET": "binary", # ["original", "binary"]
         "SEGMENT_LENGTH": 37,
         "FRAMESKIP": 4,
 
@@ -31,6 +30,16 @@ if __name__ == '__main__':
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
         "BATCH_SIZE": 2,
     }
+
+    # Setup Datasets and Dataloaders
+    if CONFIG["DATASET"] == "original":
+        Dataset = bbdb_dataset.OriginalBBDBDataset
+    elif CONFIG["DATASET"] == "binary":
+        Dataset = bbdb_dataset.BinaryBBDBDataset
+    elif CONFIG["DATASET"] == "debug":
+        Dataset = bbdb_dataset.DebugBBDBDataset
+    else:
+        assert False
 
     # Setup Dataset and Dataloader
     with open("data_split.min.json", "r") as fp:
@@ -49,7 +58,7 @@ if __name__ == '__main__':
         video_transforms.Resize(256),
         video_transforms.CenterCrop(224),
     ])
-    train_dataset = bbdb_dataset.OriginalBBDBDataset(
+    train_dataset = Dataset(
         segment_filepaths=data_split["train"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -57,7 +66,7 @@ if __name__ == '__main__':
     )
     dataloader = DataLoader(train_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
 
-    val_dataset = bbdb_dataset.OriginalBBDBDataset(
+    val_dataset = Dataset(
         segment_filepaths=data_split["valid"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
@@ -65,7 +74,7 @@ if __name__ == '__main__':
     )
     val_dataloader = DataLoader(val_dataset, batch_size=CONFIG["BATCH_SIZE"], shuffle=True, pin_memory=True)
     
-    test_dataset = bbdb_dataset.OriginalBBDBDataset(
+    test_dataset = Dataset(
         segment_filepaths=data_split["test"],
         segment_length=CONFIG["SEGMENT_LENGTH"],
         frameskip=CONFIG["FRAMESKIP"],
