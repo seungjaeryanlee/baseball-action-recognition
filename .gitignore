@@ -7,6 +7,9 @@ segments/
 wandb/
 # Trained models
 models/
+# t-SNE files
+embeddings.npy
+embeddings_2d.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
