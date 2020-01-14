@@ -151,14 +151,14 @@ if __name__ == '__main__':
         "I3D_SAVE_MODEL_PATH": "models/",
 
         ## Data
-        "DATASET": "debug", # ["original", "binary"]
-        "SEGMENT_LENGTH": 150,
-        "FRAMESKIP": 1,
+        "DATASET": "binary", # ["original", "binary"]
+        "SEGMENT_LENGTH": 75,
+        "FRAMESKIP": 2,
 
         ## Training
-        "MAX_EPOCH": 1000,
+        "MAX_EPOCH": 1,
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
-        "BATCH_SIZE": 1,
+        "BATCH_SIZE": 4,
 
         ## Learning Rate
         "INIT_LR": 0.1,
@@ -167,8 +167,9 @@ if __name__ == '__main__':
 
         ## Misc.
         # Accumulate gradient
-        "NUM_STEPS_PER_UPDATE": 4,
-        "MODEL_SAVE_INTERVAL": 1000,
+        # NOTE(seungjaeryanlee): Originally 4, but increased to account for lower batch size
+        "NUM_STEPS_PER_UPDATE": 40,
+        "MODEL_SAVE_INTERVAL": 100,
     }
     assert CONFIG["SEGMENT_LENGTH"] * CONFIG["FRAMESKIP"] <= 150
 
@@ -225,6 +226,8 @@ if __name__ == '__main__':
         i3d = InceptionI3d(400, in_channels=2)
     else:
         i3d = InceptionI3d(400, in_channels=3)
+    if CONFIG["I3D_PRETRAINED_DATASET"] == "charades":
+        i3d.replace_logits(157)
     i3d.load_state_dict(torch.load('pretrained_models/{}_{}.pt'.format(CONFIG["I3D_MODE"], CONFIG["I3D_PRETRAINED_DATASET"])))
     i3d.replace_logits(dataset.NUM_LABELS)
     if CONFIG["I3D_LOAD_MODEL_PATH"]:
