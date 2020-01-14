@@ -13,9 +13,9 @@ labels = np.array(labels)
 labels = labels[(labels != 16) & (labels != 24) & (labels != 29)]
 
 # with open("models/20200112-164221/004440_final.json", "r") as fp:
-with open("models/20200114-104946/002240_final.json", "r") as fp:
+# with open("models/20200114-104946/002240_final.json", "r") as fp:
 # with open("models/20200113-080640/002240_final.json", "r") as fp:
-# with open("models/20200113-100601/002240_final.json", "r") as fp:
+with open("models/20200113-100601/002240_final.json", "r") as fp:
     data = json.load(fp)
     binary_predictions = data["predictions"]
     binary_labels = data["labels"]
@@ -30,10 +30,12 @@ for i, label in enumerate(labels):
     else:
         incorrect[label] += 1
 
-fig, axs = plt.subplots(2, 1, figsize=(20, 12), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 
 axs[0].bar(np.arange(30), correct)
 axs[0].bar(np.arange(30), incorrect, bottom=correct)
+axs[0].legend(["correct", "incorrect"])
+axs[0].set_ylabel("Number of segments")
 
 correct, incorrect = correct/(correct + incorrect), incorrect/(correct + incorrect)
 axs[1].bar(np.arange(30), correct)
@@ -84,6 +86,7 @@ for i in range(30):
 
 plt.xticks(range(30))
 axs[1].set_xticklabels(["{}({})".format(LABEL_ID_TO_STR[i], binary_labels[i]) for i in range(30)], rotation = 45, ha="right")
-fig.subplots_adjust(bottom=0.2)
+fig.subplots_adjust(bottom=0.3)
+axs[1].set_ylabel("Ratio of video segments")
 
 plt.show()
