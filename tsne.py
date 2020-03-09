@@ -112,7 +112,7 @@ if __name__ == '__main__':
         np.save("embeddings_2d.npy", embeddings_2d)
 
 
-    fig, axs = plt.subplots(1, 3, figsize=(15, 8))
+    fig, axs = plt.subplots(1, 3, figsize=(12, 4))
 
     batting_indices = (binary_labels == 1).nonzero()[0]
     no_hit_indices = (binary_labels == 0).nonzero()[0]
@@ -121,17 +121,21 @@ if __name__ == '__main__':
     axs[0].set_title("Ground Truth")
     axs[0].scatter(embeddings_2d[batting_indices, 0], embeddings_2d[batting_indices, 1], c="blue")
     axs[0].scatter(embeddings_2d[no_hit_indices, 0], embeddings_2d[no_hit_indices, 1], c="green")
+    axs[0].legend(["Batting", "No hit"])
 
     predicted_batting_indices = (binary_predictions == 1).nonzero()[0]
     predicted_no_hit_indices = (binary_predictions == 0).nonzero()[0]
     axs[1].set_title("Prediction")
     axs[1].scatter(embeddings_2d[predicted_batting_indices, 0], embeddings_2d[predicted_batting_indices, 1], c="blue")
     axs[1].scatter(embeddings_2d[predicted_no_hit_indices, 0], embeddings_2d[predicted_no_hit_indices, 1], c="green")
+    axs[1].legend(["Batting", "No hit"])
 
-    axs[2].set_title("Top 5 Labels")
-    colors = plt.cm.hsv(np.linspace(0.1, 0.9, 5))
+    axs[2].set_title("Ball, Strike, and Foul")
+    colors = plt.cm.hsv(np.linspace(0.1, 0.9, 3))
     for i, color in enumerate(colors):
+        if i not in [0, 1, 2]: continue
         indices = (original_labels == i).nonzero()[0]
         axs[2].scatter(embeddings_2d[indices, 0], embeddings_2d[indices, 1], c=[colors[i]])
+    axs[2].legend([bbdb_dataset.LABEL_ID_TO_STR[i] for i in range(3)])
 
     plt.show()

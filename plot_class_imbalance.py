@@ -22,7 +22,7 @@ import matplotlib.animation as animation
 if __name__ == '__main__':
     CONFIG = {
         ## Data
-        "DATASET": "binary", # ["original", "binary"]
+        "DATASET": "original", # ["original", "binary"]
         "SEGMENT_LENGTH": 37,
         "FRAMESKIP": 4,
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_dataset, batch_size=CONFIG["BATCH_SIZE"], pin_memory=True)
 
     # Plot histogram of labels in datasets
-    fig, axs = plt.subplots(1, 3, sharey=True, figsize=(20, 5))
+    fig, axs = plt.subplots(1, 3, sharey=True, figsize=(10, 3))
     axs[0].set_title("Training set")
     axs[0].bar(range(train_dataset.NUM_LABELS), train_dataset.label_counts / sum(train_dataset.label_counts))
     axs[1].set_title("Validation set")

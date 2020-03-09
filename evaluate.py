@@ -55,14 +55,14 @@ def evaluate_i3d(i3d, dataset, dataloader):
 if __name__ == '__main__':
     CONFIG = {
         ## I3D
-        "RGB_I3D_LOAD_MODEL_PATH": "models/20200114-104946/002240_final.pt",
+        "RGB_I3D_LOAD_MODEL_PATH": "models/20200114-131402/002240_final.pt",
         # TODO(seungjaeryanlee): Flow I3D Not yet integrated
         "FLOW_I3D_LOAD_MODEL_PATH": "",
 
         ## Data
         "DATASET": "binary",
-        "SEGMENT_LENGTH": 75,
-        "FRAMESKIP": 2,
+        "SEGMENT_LENGTH": 150,
+        "FRAMESKIP": 1,
 
         ## Training
         # NOTE(seungjaeryanlee): Originally 8*5, but lowered due to memory
