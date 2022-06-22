@@ -1,5 +1,5 @@
 moviepy==1.0.0
-numpy==1.17.2
+numpy==1.22.0
 opencv-python==4.2.0.32
 scikit-video==1.1.11
 torch==1.2.0
